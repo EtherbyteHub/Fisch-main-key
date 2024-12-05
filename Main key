@@ -1,0 +1,174 @@
+-- KeyGuard Library Configuration
+local KeyGuardLibrary = loadstring(game:HttpGet("https://cdn.keyguardian.org/library/v1.0.0.lua"))()
+local trueData = "d6f8f5e1ca074acbaf27638cca44115a"
+local falseData = "b5ea50869b1e4a1b84b74e3764cbe21a"
+local SavedKeyPath = "EtherbyteHub_SavedKey.txt" -- File to save key locally
+
+KeyGuardLibrary.Set({
+    publicToken = "7e5793fe2bd84d079fe694cc7209b5ba",
+    privateToken = "b1e8e95b97be4dd2b4a519bb227928a9",
+    trueData = trueData,
+    falseData = falseData,
+})
+
+-- Functions for saving and loading the key
+local function saveKey(key)
+    if writefile then
+        local success, errorMsg = pcall(function()
+            writefile(SavedKeyPath, key)
+        end)
+        if not success then
+            warn("Failed to save key: " .. errorMsg)
+        end
+    end
+end
+
+local function loadKey()
+    if readfile then
+        local success, key = pcall(function()
+            return readfile(SavedKeyPath)
+        end)
+        if success then
+            return key
+        else
+            warn("Failed to load key: " .. key)
+        end
+    end
+    return nil
+end
+
+-- Function to validate and load the main script
+local function validateKeyAndLoad(key)
+    local response = KeyGuardLibrary.validateDefaultKey(key)
+    if response == trueData then
+        saveKey(key)
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EtherbyteHub/Main-fisch-script/refs/heads/main/Main", true))()
+        return true
+    else
+        return false
+    end
+end
+
+-- Check for saved key
+local savedKey = loadKey()
+if savedKey and validateKeyAndLoad(savedKey) then
+    return -- Exit if the key is valid and the main script is loaded
+end
+
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local KeyInput = Instance.new("TextBox")
+local VerifyButton = Instance.new("TextButton")
+local GetKeyButton = Instance.new("TextButton")
+local JoinDiscordButton = Instance.new("TextButton")
+local CloseButton = Instance.new("TextButton") -- Added Close Button
+
+-- MainFrame Setup
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Name = "KeySystemGUI"
+
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(245, 245, 220) -- Beige
+MainFrame.Size = UDim2.new(0, 350, 0, 250)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+-- Title Setup
+Title.Parent = MainFrame
+Title.Text = "Key System Etherbyte Hub"
+Title.TextColor3 = Color3.fromRGB(111, 78, 55) -- CoffeeBrown
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 20
+
+-- Close Button Setup
+CloseButton.Parent = MainFrame
+CloseButton.Text = "X"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(111, 78, 55) -- CoffeeBrown
+CloseButton.TextColor3 = Color3.fromRGB(245, 245, 220) -- Beige
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.TextSize = 16
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- KeyInput Setup
+KeyInput.Parent = MainFrame
+KeyInput.PlaceholderText = "Enter Key Here..."
+KeyInput.Text = ""
+KeyInput.Size = UDim2.new(0.8, 0, 0, 40)
+KeyInput.Position = UDim2.new(0.1, 0, 0.25, 0)
+KeyInput.BackgroundColor3 = Color3.fromRGB(111, 78, 55) -- CoffeeBrown
+KeyInput.TextColor3 = Color3.fromRGB(245, 245, 220) -- Beige
+KeyInput.Font = Enum.Font.SourceSans
+KeyInput.TextSize = 16
+KeyInput.ClearTextOnFocus = false
+
+-- Button Styling Function
+local function styleButton(button, text, position)
+    button.Parent = MainFrame
+    button.Text = text
+    button.Size = UDim2.new(0.8, 0, 0, 40)
+    button.Position = position
+    button.BackgroundColor3 = Color3.fromRGB(111, 78, 55) -- CoffeeBrown
+    button.TextColor3 = Color3.fromRGB(245, 245, 220) -- Beige
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 16
+
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.new(0.5, 0.3, 0.2)
+    end)
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(111, 78, 55) -- CoffeeBrown
+    end)
+end
+
+-- Verify Button Setup
+styleButton(VerifyButton, "Verify Key", UDim2.new(0.1, 0, 0.45, 0))
+VerifyButton.MouseButton1Click:Connect(function()
+    local inputKey = KeyInput.Text
+    if validateKeyAndLoad(inputKey) then
+        ScreenGui:Destroy()
+    else
+        KeyInput.Text = ""
+        KeyInput.PlaceholderText = "Invalid Key. Try Again."
+    end
+end)
+
+-- Get Key Button Setup
+styleButton(GetKeyButton, "Get Key", UDim2.new(0.1, 0, 0.6, 0))
+GetKeyButton.MouseButton1Click:Connect(function()
+    local keyUrl = KeyGuardLibrary.getLink()
+    if setclipboard then
+        setclipboard(keyUrl)
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "Copied",
+            Text = "Key URL copied to clipboard.",
+        })
+    else
+        warn("Clipboard not supported!")
+    end
+end)
+
+-- Join Discord Button Setup
+styleButton(JoinDiscordButton, "Join Discord", UDim2.new(0.1, 0, 0.75, 0))
+JoinDiscordButton.MouseButton1Click:Connect(function()
+    local discordUrl = "https://discord.gg/q3ppBKYNDf"
+    if setclipboard then
+        setclipboard(discordUrl)
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "Copied",
+            Text = "Discord link copied to clipboard.",
+        })
+    else
+        warn("Clipboard not supported!")
+    end
+end)
